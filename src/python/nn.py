@@ -400,10 +400,10 @@ class DropoutLayer(object):
         
         #is_train is a pseudo boolean theano variable for switching between training and prediction 
         self.output = T.switch(T.neq(is_train, 0),train_output, train_output)
-class LeNetConvLayer(object):
+class ConvLayer(object):
     """Pool Layer of a convolutional network """
 
-    def __init__(self, rng, input,is_train, filter_shape, image_shape,st_conv=(1,1),border_mode='valid'):
+    def __init__(self, rng, input, filter_shape, image_shape, border_mode=1):
         """
         Allocate a LeNetConvPoolLayer with shared variable internal parameters.
 
@@ -427,18 +427,16 @@ class LeNetConvLayer(object):
 
         assert image_shape[1] == filter_shape[1]
         self.input = input
-        self.image_shape=image_shape
+
         # there are "num input feature maps * filter height * filter width"
         # inputs to each hidden unit
         fan_in = numpy.prod(filter_shape[1:])
         # each unit in the lower layer receives a gradient from:
         # "num output feature maps * filter height * filter width" /
         #   pooling size
-        fan_out = (filter_shape[0] * numpy.prod(filter_shape[2:]) //
-                   numpy.prod(st_conv))
-        self.is_train=is_train
+        
         # initialize weights with random weights
-        W_bound = numpy.sqrt(6. / (fan_in + fan_out))
+        W_bound = numpy.sqrt(6. / (fan_in))
         self.W = theano.shared(
             numpy.asarray(
                 rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
@@ -457,64 +455,22 @@ class LeNetConvLayer(object):
             filters=self.W,
             filter_shape=filter_shape,
             input_shape=image_shape,
-            subsample=st_conv,
-            border_mode=border_mode
-            
+            border_mode = border_mode
         )
 
         # add the bias term. Since the bias is a vector (1D array), we first
         # reshape it to a tensor of shape (1, n_filters, 1, 1). Each bias will
         # thus be broadcasted across mini-batches and feature map
         # width & height
-        self.output = T.tanh(conv_out + self.b.dimshuffle('x', 0, 'x', 'x'))
-
+        self.output = T.nnet.relu(conv_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+        #self.ypred = T.tanh(conv_out + self.b.dimshuffle(8, 3, 32,32))
         # store parameters of this layer
         self.params = [self.W, self.b]
 
         # keep track of model input
         self.input = input
-    def mse(self, y):
-        """Return a float representing the number of errors in the minibatch
-        over the total number of examples of the minibatch ; zero one
-        loss over the size of the minibatch
-
-        :type y: theano.tensor.TensorType
-        :param y: corresponds to a vector that gives for each example the
-                  correct label
-        """
-        # check if y has same dimension of y_pred
-        if y.ndim != self.output.ndim:
-            raise TypeError(
-                'y should have the same shape as self.y_pred',
-                ('y', y.type, 'x',self.output.type ,'Dim=',y.ndim,'other=',self.output.ndim)
-            )
-        # check if y is of the correct datatype
-        if not y.dtype.startswith('int'):
-            return T.mean(T.pow((self.output-y),2))
-        else:
-            raise NotImplementedError()      
-    def error(self, y):
-        """Return a float representing the number of errors in the minibatch
-        over the total number of examples of the minibatch ; zero one
-        loss over the size of the minibatch
-
-        :type y: theano.tensor.TensorType
-        :param y: corresponds to a vector that gives for each example the
-                  correct label
-        """
-        # check if y has same dimension of y_pred
-        if y.ndim != self.output.ndim:
-            raise TypeError(
-                'y should have the same shape as self.y_pred',
-                ('y', y.type, 'x',self.output.type ,'Dim=',y.ndim,'other=',self.output.ndim)
-            )
-        # check if y is of the correct datatype
-        if not y.dtype.startswith('int'):
-            if(self.is_train==0):
-                return T.sqrt(T.mean(T.pow((self.output[0:8]-y[0:8]),2)))
-            return T.sqrt(T.mean(T.pow((self.output-y),2)))
-        else:
-            raise NotImplementedError()      
+    def mean_squared_error(self, y):
+        return T.mean(T.pow(self.output - y,2))
 class Unpooling_2D(object):
     def __init__(self,input, ds=(2, 2), ignore_border=True):
         self.input = input
