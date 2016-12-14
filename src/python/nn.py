@@ -469,6 +469,15 @@ class ConvLayer(object):
 
         # keep track of model input
         self.input = input
+    def set_param(self,W,b):
+        self.W = theano.shared(
+            numpy.asarray(
+                W,
+                dtype=theano.config.floatX
+            ),
+            borrow=True
+        )
+        self.b=theano.shared(value=b, borrow=True)
     def mean_squared_error(self, y):
         return T.mean(T.pow(self.output - y,2))
 class Unpooling_2D(object):
