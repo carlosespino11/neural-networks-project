@@ -403,7 +403,7 @@ class DropoutLayer(object):
 class ConvLayer(object):
     """Pool Layer of a convolutional network """
 
-    def __init__(self, rng, input, filter_shape, image_shape, border_mode=1):
+    def __init__(self, rng, input, filter_shape, image_shape,W,b, border_mode=1):
         """
         Allocate a LeNetConvPoolLayer with shared variable internal parameters.
 
@@ -436,18 +436,16 @@ class ConvLayer(object):
         #   pooling size
         
         # initialize weights with random weights
-        W_bound = numpy.sqrt(6. / (fan_in))
         self.W = theano.shared(
             numpy.asarray(
-                rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
+                W,
                 dtype=theano.config.floatX
             ),
             borrow=True
         )
 
         # the bias is a 1D tensor -- one bias per output feature map
-        b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
-        self.b = theano.shared(value=b_values, borrow=True)
+        self.b = theano.shared(value=b, borrow=True)
 
         # convolve input feature maps with filters
         conv_out = conv2d(
@@ -469,6 +467,15 @@ class ConvLayer(object):
 
         # keep track of model input
         self.input = input
+    def set_param(self,W,b):
+        self.W = theano.shared(
+            numpy.asarray(
+                W,
+                dtype=theano.config.floatX
+            ),
+            borrow=True
+        )
+        self.b=theano.shared(value=b, borrow=True)
     def mean_squared_error(self, y):
         return T.mean(T.pow(self.output - y,2))
 class Unpooling_2D(object):
