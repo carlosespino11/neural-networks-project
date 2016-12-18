@@ -1,0 +1,7 @@
+[I 20:57:33.939 NotebookApp] The port 9999 is already in use, trying another random port.
+[I 20:57:33.942 NotebookApp] Serving notebooks from local directory: /home/ubuntu/neural-networks-project/data
+[I 20:57:33.942 NotebookApp] 0 active kernels 
+[I 20:57:33.942 NotebookApp] The Jupyter Notebook is running at: https://[all ip addresses on your system]:10000/
+[I 20:57:33.943 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[I 20:57:37.399 NotebookApp] Interrupted...
+[I 20:57:37.400 NotebookApp] Shutting down kernels
